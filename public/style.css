@@ -1,48 +1,92 @@
 body {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-    background-color: #f5f5f5;
-    color: #171a20;
     margin: 0;
-    padding: 0;
+    font-family: 'Inter', sans-serif;
+    background-color: #171a20; /* Tesla Dark Grey */
+    color: #e6e6e6;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.tesla-bg {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle at center, #2c2f36 0%, #171a20 70%);
+    z-index: -1;
 }
 
 .container {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 2rem;
+    max-width: 400px;
+    width: 90%;
     text-align: center;
 }
 
-header h1 {
-    font-size: 2.5rem;
-    font-weight: 300;
-    letter-spacing: -0.02em;
+.logo {
+    width: 100px;
+    margin-bottom: 1rem;
+    filter: brightness(0) invert(1);
 }
 
-#connect-btn {
-    background-color: #3e6ae8;
+h1 {
+    font-weight: 300;
+    letter-spacing: -0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 2rem;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+button {
+    background: #e82127; /* Tesla Red Accent */
     color: white;
     border: none;
     padding: 1rem 2rem;
-    font-size: 1.2rem;
-    border-radius: 8px;
+    font-size: 1rem;
+    border-radius: 4px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    width: 100%;
+    transition: opacity 0.2s;
 }
 
-#connect-btn:hover {
-    background-color: #2b55c9;
+button:hover { opacity: 0.9; }
+
+.status-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: #aaa;
 }
 
-.hidden {
-    display: none;
+.mono {
+    font-family: monospace;
+    color: #fff;
 }
 
-#notification {
-    margin-top: 1rem;
-    padding: 1rem;
-    background-color: #e6f7ea;
-    border: 1px solid #b2d8bc;
+.toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #393c41;
+    padding: 1rem 2rem;
     border-radius: 8px;
-    color: #137333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    animation: slideUp 0.3s ease-out;
+}
+
+.hidden { display: none; }
+
+@keyframes slideUp {
+    from { transform: translate(-50%, 20px); opacity: 0; }
+    to { transform: translate(-50%, 0); opacity: 1; }
 }

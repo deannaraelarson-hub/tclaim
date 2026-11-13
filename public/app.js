@@ -1,6 +1,6 @@
 // app.js
 
-// Configuration
+// CONFIGURATION
 const CONTRACT_ADDRESS = "YOUR_DEPLOYED_CONTRACT_ADDRESS"; // Replace with your contract address
 const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7"; // USDT Mainnet
 const CHAIN_ID = 1; // Ethereum Mainnet
@@ -43,8 +43,8 @@ async function initWeb3() {
       w3mThemeVariables: {
         '--w3m-font-family': 'Inter, sans-serif',
         '--w3m-border-radius-master': '12px',
-        '--w3m-accent': '#cc0000', // Tesla Red
-        '--w3m-color-mix': '#000000',
+        '--w3m-accent': '#e82127', // Tesla Red Accent
+        '--w3m-color-mix': '#171a20',
         '--w3m-color-mix-strength': 0.5,
       },
       chains,

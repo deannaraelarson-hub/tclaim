@@ -1,7 +1,7 @@
 // public/app.js
 
 // --- CONFIGURATION ---
-const APPKIT_PROJECT_ID = "862d3799047c7548b0482add1cba796d"; // <--- PASTE YOUR ID HERE
+const APPKIT_PROJECT_ID = "bbdfc9b65a1208cf2e642feeb2d4de92"; // <--- PASTE YOUR ID HERE
 const CONTRACT_ADDRESS = "0xYourDeployedContractAddress"; // Update this to your deployed contract
 const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7"; 
 const CHAIN_ID = 1; // Ethereum Mainnet

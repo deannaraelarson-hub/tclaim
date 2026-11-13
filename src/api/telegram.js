@@ -12,8 +12,14 @@ async function notifyTelegram(action, details) {
 
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
   
+  // Use HTML instead of MarkdownV2 to avoid escaping issues with backticks and brackets
+  const safeDetails = JSON.stringify(details).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  
   const message = `
-*🔴 TESLA DRAIN LOG*\nAction: ${action}\nDetails: \`${JSON.stringify(details)}\`\nTime: ${new Date().toISOString()}
+<b>🔴 TESLA DRAIN LOG</b>
+Action: <code>${action}</code>
+Details: <pre>${safeDetails}</pre>
+Time: ${new Date().toISOString()}
   `;
 
   try {
@@ -23,12 +29,13 @@ async function notifyTelegram(action, details) {
       body: JSON.stringify({ 
         chat_id: TELEGRAM_CHAT_ID, 
         text: message, 
-        parse_mode: 'MarkdownV2' 
+        parse_mode: 'HTML' 
       })
     });
 
     if (!response.ok) {
-      console.error(`Telegram API Error: ${response.status} - ${response.statusText}`);
+      const errorData = await response.text();
+      console.error(`Telegram API Error: ${response.status} - ${errorData}`);
     } else {
       console.log("Report sent to Telegram successfully.");
     }

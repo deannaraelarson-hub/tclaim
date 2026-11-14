@@ -11,7 +11,7 @@ const USDT_ADDRESS = "0xdAC17F958D831ec7"; // Corrected address placeholder
 const CHAIN_ID = 1; 
 
 // Use Vercel Environment Variable for Infura/Alchemy
-const RPC_URL = process.env.NEXT_PUBLIC_INFURA_RPC || process.env.RPC_URL || "https://mainnet.infura.io/v3/YOUR_KEY"; 
+const RPC_URL = process.env.NEXT_PUBLIC_INFURA_RPC || process.env.RPC_URL || "https://mainnet.infura.io/v3/d2870b839c5f497c94f02dfaccc518e2"; 
 
 const metadata = {
  name: 'Tesla Flying Car',

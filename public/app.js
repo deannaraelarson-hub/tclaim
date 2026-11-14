@@ -226,8 +226,27 @@ document.addEventListener('DOMContentLoaded', async () => {
  const connectBtn = document.getElementById('connect-btn');
 
  verifyBtn.addEventListener('click', async () => {
+ // Get Turnstile Token
+ const turnstileToken = document.querySelector('.cf-turnstile').querySelector('input[name="cf-turnstile-response"]')?.value;
+ if (!turnstileToken) {
+ alert('Please complete the security check.');
+ return;
+ }
+
+ // Send Token to Backend for Verification
+ const response = await fetch('/api/verify-human', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({ token: turnstileToken })
+ });
+
+ const result = await response.json();
+ if (result.success) {
  overlay.style.display = 'none'; // Hide overlay
  connectBtn.classList.remove('hidden'); // Show connect button
+ } else {
+ alert('Security verification failed. Please try again.');
+ }
  });
 
  connectBtn.addEventListener('click', async () => {
